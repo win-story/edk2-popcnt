@@ -1,0 +1,57 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs: 
+  build:
+    runs-on: windows-2025
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { platform: OvmfPkg, arch: X64, target: RELEASE }
+          - { platform: OvmfPkg, arch: X64, target: DEBUG }
+
+    steps:
+    - uses: actions/setup-python@main
+      with:
+          python-version: 3.12
+
+    - uses: actions/checkout@main
+      with: 
+          submodules: 'true'
+
+    - name: 'Build ${{ matrix.arch }}'
+      run: |
+        pip install --upgrade -r pip-requirements.txt
+        python BaseTools\Edk2ToolsBuild.py
+        python stuart_setup -c ${{ matrix.platform }}\PlatformCI\PlatformBuild.py -a ${{ matrix.arch }} -t ${{ matrix.target }}
+        stuart_update -c ${{ matrix.platform }}\PlatformCI\PlatformBuild.py -a ${{ matrix.arch }} -t ${{ matrix.target }}
+        stuart_build -c ${{ matrix.platform }}\PlatformCI\PlatformBuild.py -a ${{ matrix.arch }} Target=${{ matrix.target }} BLD_*_SECURE_BOOT_ENABLE=TRUE
+        echo "version=$(date +%Y%m%d)-$(git rev-parse --short HEAD)" > $Env:GITHUB_ENV
+
+    - name: 'Upload artifact'
+      uses: actions/upload-artifact@main
+      with:
+        name: ${{ format('{0} {1} {2}', matrix.platform, matrix.arch, matrix.target) }}
+        path:  ${{ github.workspace }}\Build\OvmfX64\${{ matrix.target }}_VS2022\FV\*.fd
+        compression-level: 9
+
+    - name: 'Upload artifact'
+      uses: actions/upload-artifact@main
+      with:
+        name: ${{ format('{0} {1} {2} Build logs', matrix.platform, matrix.arch, matrix.target) }}
+        path:  ${{ github.workspace }}\Build
+        compression-level: 9
+
+    - name: 'Create a Release'
+      if: ${{ github.event_name == 'push' && github.ref_name == 'main' && matrix.target == 'RELEASE' }}
+      uses: ncipollo/release-action@main
+      with:
+        allowUpdates: true
+        commit: ${{ github.ref_name }}
+        tag: edk2-popcnt-${{ env.version }}
+        artifacts: ${{ github.workspace }}\Build\OvmfX64\${{ matrix.target }}_VS2022\FV\*.fd
