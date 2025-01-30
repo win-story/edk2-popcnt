@@ -1053,3 +1053,8 @@
   # TPM support
   #
 !include OvmfPkg/Include/Dsc/OvmfTpmComponentsDxe.dsc.inc
+
+  #
+  # Instruction Emulation support
+  #
+  OvmfPkg/InstructionEmulatorDxe/InstructionEmulatorDxe.inf
