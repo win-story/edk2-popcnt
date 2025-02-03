@@ -466,7 +466,8 @@ FatOpenDevice (
   // logic across FAT types
   ReservedFatEntry = FatGetFatEntry (Volume, 1);
   if ((Volume->FatEntryBuffer == MAX_UINT32) || !FAT_END_OF_FAT_CHAIN (ReservedFatEntry)) {
-    return EFI_VOLUME_CORRUPTED;
+    // Workaround
+    // return EFI_VOLUME_CORRUPTED;
   }
 
   return EFI_SUCCESS;

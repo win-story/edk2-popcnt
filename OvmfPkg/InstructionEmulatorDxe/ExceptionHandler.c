@@ -60,11 +60,11 @@ ExceptionHandler(
   IN EFI_EXCEPTION_TYPE ExceptionType,
   IN EFI_SYSTEM_CONTEXT SystemContext
 ) {
-  if (ExceptionType != EXCEPT_IA32_INVALID_OPCODE) {
+  if (ExceptionType != EXCEPT_X64_INVALID_OPCODE) {
     return;
   }
 
-  UINT8 *Rip = (UINT8 *)SystemContext.SystemContextX64->Rip;
+  UINT8 *Rip = (UINT8 *)(SystemContext.SystemContextX64->Rip - 1);
 
   // Check if the instruction is POPCNT (opcode: F3 0F B8 /r)
   if (Rip[0] == 0xF3 && Rip[1] == 0x0F && Rip[2] == 0xB8) {
@@ -112,7 +112,7 @@ ExceptionHandler(
     }
 
     // Adjust RIP to point to the next instruction
-    SystemContext.SystemContextX64->Rip += 4; // Length of POPCNT instruction
+    SystemContext.SystemContextX64->Rip = (UINT64)(Rip + 4); // Length of POPCNT instruction
 
     return;
   }
