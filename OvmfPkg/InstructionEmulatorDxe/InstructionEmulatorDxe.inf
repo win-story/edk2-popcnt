@@ -5,6 +5,7 @@
   MODULE_TYPE                    = DXE_DRIVER
   VERSION_STRING                 = 1.0
   ENTRY_POINT                    = InstructionEmulatorDxeEntryPoint
+  UEFI_RUNTIME_DRIVER            = TRUE
 
 [Sources]
   InstructionEmulatorDxe.c
