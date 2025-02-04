@@ -60,11 +60,14 @@ ExceptionHandler(
   IN EFI_EXCEPTION_TYPE ExceptionType,
   IN EFI_SYSTEM_CONTEXT SystemContext
 ) {
-  if (ExceptionType != EXCEPT_IA32_INVALID_OPCODE) {
+  if (ExceptionType != EXCEPT_X64_INVALID_OPCODE) {
+    DEBUG((EFI_D_INFO, "Unknown exception type %d\n", ExceptionType));
     return;
   }
 
   UINT8 *Rip = (UINT8 *)SystemContext.SystemContextX64->Rip;
+
+  DEBUG((EFI_D_INFO, "Exception instruction detected at 0x%p\n", Rip));
 
   // Check if the instruction is POPCNT (opcode: F3 0F B8 /r)
   if (Rip[0] == 0xF3 && Rip[1] == 0x0F && Rip[2] == 0xB8) {
