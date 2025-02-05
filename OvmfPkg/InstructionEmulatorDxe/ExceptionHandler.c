@@ -54,6 +54,30 @@ ReadMemoryOperand(
   return Operand;
 }
 
+// Helper function to calculate instruction length
+UINTN
+GetInstructionLength(
+  UINT8 *Rip
+) {
+  UINT8 ModRM = Rip[3];
+  UINT8 Mod = (ModRM >> 6) & 0x3;
+  UINT8 Rm = ModRM & 0x7;
+  UINTN Length = 4; // Base length: F3 0F B8 /r
+
+  if (Mod == 0x01) {
+    Length += 1; // 8-bit displacement
+  } else if (Mod == 0x02) {
+    Length += 4; // 32-bit displacement
+  }
+
+  if (Rm == 4 && Mod != 0x3) {
+    // SIB byte present
+    Length += 1;
+  }
+
+  return Length;
+}
+
 VOID
 EFIAPI
 ExceptionHandler(
@@ -66,12 +90,25 @@ ExceptionHandler(
 
   UINT8 *Rip = (UINT8 *)(SystemContext.SystemContextX64->Rip - 1);
 
-  // Check if the instruction is POPCNT (opcode: F3 0F B8 /r)
-  if (Rip[0] == 0xF3 && Rip[1] == 0x0F && Rip[2] == 0xB8) {
+  // Check for relevant prefixes
+  UINT8 *InstructionPtr = Rip;
+  BOOLEAN PrefixFound = FALSE;
+  UINT8 REX = 0;
+
+  while (*InstructionPtr == 0xF3 || *InstructionPtr == 0xF2 || *InstructionPtr == 0x66 || 
+         (*InstructionPtr & 0xF0) == 0x40) {
+    if ((*InstructionPtr & 0xF0) == 0x40) {
+      REX = *InstructionPtr; // REX prefix found
+    }
+    InstructionPtr++;
+    PrefixFound = TRUE;
+  }
+
+  // Check if the instruction is POPCNT (opcode: 0F B8 /r)
+  if (*InstructionPtr == 0x0F && *(InstructionPtr + 1) == 0xB8) {
     DEBUG((EFI_D_INFO, "POPCNT instruction detected at 0x%p\n", Rip));
 
-    // Decode ModR/M byte to get the operand
-    UINT8 ModRM = Rip[3];
+    UINT8 ModRM = *(InstructionPtr + 2);
     UINT8 Mod = (ModRM >> 6) & 0x3;
     UINT8 Reg = (ModRM >> 3) & 0x7;
     UINT8 Rm = ModRM & 0x7;
@@ -92,7 +129,7 @@ ExceptionHandler(
       }
     } else {
       // Handle memory operand
-      Operand = ReadMemoryOperand(SystemContext.SystemContextX64, Rip + 3, Rip);
+      Operand = ReadMemoryOperand(SystemContext.SystemContextX64, InstructionPtr + 2, Rip);
     }
 
     // Emulate POPCNT
@@ -112,7 +149,8 @@ ExceptionHandler(
     }
 
     // Adjust RIP to point to the next instruction
-    SystemContext.SystemContextX64->Rip = (UINT64)(Rip + 4); // Length of POPCNT instruction
+    UINTN InstructionLength = (UINTN)(InstructionPtr - Rip) + 2 + GetInstructionLength(InstructionPtr);
+    SystemContext.SystemContextX64->Rip = (UINT64)(Rip + InstructionLength);
 
     return;
   }
