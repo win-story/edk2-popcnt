@@ -65,6 +65,7 @@ ExceptionHandler(
   }
 
   UINT8 *Rip = (UINT8 *)SystemContext.SystemContextX64->Rip;
+  DEBUG((EFI_D_INFO, "Exception instruction detected 0x%x 0x%x 0x%x\n", Rip[3], Rip[0], Rip[1]));
 
   // Check if the instruction is POPCNT (opcode: F3 0F B8 /r)
   if (Rip[3] == 0xF3 && Rip[0] == 0x0F && Rip[1] == 0xB8) {
