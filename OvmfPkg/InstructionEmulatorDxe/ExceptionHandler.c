@@ -107,9 +107,11 @@ ExceptionHandler(
 
   while (*InstructionPtr == 0xF3 || *InstructionPtr == 0xF2 || *InstructionPtr == 0x66 || 
          (*InstructionPtr & 0xF0) == 0x40) {
+    DEBUG((EFI_D_INFO, "Found instruction prefix 0x%x\n", *InstructionPtr));
     if ((*InstructionPtr & 0xF0) == 0x40) {
       REX = *InstructionPtr; // REX prefix found
       HasRexPrefix = TRUE;
+      DEBUG((EFI_D_INFO, "Found REX prefix"));
     }
     InstructionPtr++;
   }
@@ -118,7 +120,7 @@ ExceptionHandler(
   if (*InstructionPtr == 0x0F && *(InstructionPtr + 1) == 0xB8) {
     DEBUG((EFI_D_INFO, "POPCNT instruction detected at 0x%p\n", Rip));
 
-    UINT8 ModRM = HasRexPrefix ? *(InstructionPtr + 2) : *(InstructionPtr + 2);
+    UINT8 ModRM = *(InstructionPtr + 2);
     UINT8 Mod = (ModRM >> 6) & 0x3;
     UINT8 Reg = (ModRM >> 3) & 0x7;
     UINT8 Rm = ModRM & 0x7;
@@ -185,5 +187,9 @@ ExceptionHandler(
     SystemContext.SystemContextX64->Rip = (UINT64)(Rip + InstructionLength);
 
     return;
+  }
+  else
+  {
+    DEBUG((EFI_D_INFO, "Unknown instruction 0x%x%x detected at 0x%p\n", *InstructionPtr, *(InstructionPtr + 1), Rip));
   }
 }
