@@ -98,7 +98,7 @@ ExceptionHandler(
     return;
   }
 
-  UINT8 *Rip = (UINT8 *)(SystemContext.SystemContextX64->Rip - 1);
+  UINT8 *Rip = (UINT8 *)SystemContext.SystemContextX64->Rip;
 
   // Check for relevant prefixes
   UINT8 *InstructionPtr = Rip;
@@ -190,6 +190,6 @@ ExceptionHandler(
   }
   else
   {
-    DEBUG((EFI_D_INFO, "Unknown instruction 0x%x%x detected at 0x%p\n", *InstructionPtr, *(InstructionPtr + 1), Rip));
+    DEBUG((EFI_D_INFO, "Unknown instruction 0x%02x%02x detected at 0x%p\n", *InstructionPtr, *(InstructionPtr + 1), Rip));
   }
 }
