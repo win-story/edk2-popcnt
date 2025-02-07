@@ -2,7 +2,7 @@
   INF_VERSION                    = 0x0001001B
   BASE_NAME                      = InstructionEmulatorDxe
   FILE_GUID                      = F0A8EEA9-CE07-D5A8-0C79-C4FDA0F07E89
-  MODULE_TYPE                    = DXE_DRIVER
+  MODULE_TYPE                    = DXE_RUNTIME_DRIVER
   VERSION_STRING                 = 1.0
   ENTRY_POINT                    = InstructionEmulatorDxeEntryPoint
 
